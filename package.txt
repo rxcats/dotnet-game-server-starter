@@ -1,5 +1,0 @@
-{"MessageType":"Connect","Message":{"CharacterNo":1,"Nickname":"1"}}
-
-{"MessageType":"GameChat","Message":{"CharacterNo":1,"GameNo":0,"Message":"Hello World!"}}
-
-{"MessageType":"Connect","Message":{"CharacterNo":2,"Nickname":"2"}}
