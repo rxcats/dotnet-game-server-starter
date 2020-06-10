@@ -1,0 +1,204 @@
+<html>
+
+<head>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+        integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+        integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+        crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div class="container">
+        <form>
+            <div class="form-group">
+                <label for="address">address</label>
+                <input type="text" class="form-control" id="address" aria-describedby="address"
+                    value="wss://localhost:5001/ws">
+
+                <button type="button" id="connect" class="btn btn-primary">접속</button>
+
+                <button type="button" id="close" class="btn btn-danger">종료</button>
+            </div>
+
+            <div class="form-group">
+
+                <label for="characterNo">characterNo</label>
+                <input type="text" class="form-control" id="characterNo" value="1">
+
+                <label for="nickname">nickname</label>
+                <input type="text" class="form-control" id="nickname" value="Character#1">
+
+                <button type="button" id="evt_Connect" class="btn btn-secondary">Connect</button>
+            </div>
+
+            <div class="form-group">
+                <label for="gameNo">gameNo</label>
+                <input type="text" class="form-control" id="gameNo" value="1">
+
+                <button type="button" id="evt_SearchAndJoinGame" class="btn btn-secondary">SearchAndJoinGame</button>
+                <button type="button" id="evt_CreateGame" class="btn btn-secondary">CreateGame</button>
+                <button type="button" id="evt_JoinGame" class="btn btn-secondary">JoinGame</button>
+                <button type="button" id="evt_LeaveGame" class="btn btn-secondary">LeaveGame</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        $(document).ready(() => {
+
+            class RequestMessage {
+                constructor(MessageType, Message) {
+                    this.MessageType = MessageType;
+                    this.Message = Message;
+                }
+            }
+
+            class CharacterInfo {
+                constructor(CharacterNo, Nickname) {
+                    this.CharacterNo = CharacterNo;
+                    this.Nickname = Nickname;
+                }
+            }
+
+            class ConnectMessage {
+                constructor(GameName) {
+                    this.GameName = GameName;
+                }
+            }
+
+            class CreateGameMessage {
+                constructor(GameName) {
+                    this.GameName = GameName;
+                }
+            }
+
+            class JoinGameMessage {
+                constructor(GameNo) {
+                    this.GameNo = GameNo;
+                }
+            }
+
+            class LeaveGameMessage {
+                constructor(GameNo) {
+                    this.GameNo = GameNo;
+                }
+            }
+
+            class ResultEventCallbakService {
+                constructor() {
+
+                }
+
+                ConnectResult() {
+
+                }
+
+                CreateGameResult(param) {
+                    $('#gameNo').val(param.GameNo);
+                }
+
+                JoinGameResult(param) {
+                    $('#gameNo').val(param.GameNo);
+                }
+
+                LeaveGameResult(param) {
+
+                }
+            }
+
+            const setCharacter = () => {
+                const ts = new Date().getTime();
+                $('#characterNo').val(ts);
+                $('#nickname').val('#C' + ts);
+            };
+
+            setCharacter();
+
+            let conn = null;
+            let connected = false;
+
+            const eventCallbackService = new ResultEventCallbakService();
+
+            const addWebSocketListener = () => {
+                if (conn != null) {
+                    return;
+                }
+
+                conn = new WebSocket($('#address').val().trim());
+
+                conn.onmessage = evt => {
+                    const result = JSON.parse(evt.data);
+                    console.log(result);
+
+                    try {
+                        eventCallbackService[result.ResultType](result.Result);
+                    } catch (e) {
+                        console.error(e);
+                    }
+                };
+
+                conn.onopen = evt => {
+                    console.log('open');
+                    connected = true;
+                };
+
+                conn.onclose = evt => {
+                    console.log('closed');
+                };
+
+                conn.onerror = evt => {
+                    console.error('error');
+                };
+            };
+
+            $('#connect').on('click', () => {
+                addWebSocketListener();
+            });
+
+            $('#close').on('click', () => {
+                conn.close();
+                conn = null;
+                connected = false;
+            });
+
+            $('#evt_Connect').on('click', () => {
+                addWebSocketListener();
+
+                setTimeout(() => {
+                    const characterNo = $('#characterNo').val();
+                    const nickname = $('#nickname').val();
+                    const req = new RequestMessage('Connect', new CharacterInfo(characterNo, nickname));
+                    conn.send(JSON.stringify(req));
+                }, 500);
+            });
+
+            $('#evt_CreateGame').on('click', () => {
+                const req = new RequestMessage('CreateGame', new CreateGameMessage('TestGame'));
+                conn.send(JSON.stringify(req));
+            });
+
+            $('#evt_JoinGame').on('click', () => {
+                const gameNo = $('#gameNo').val();
+                const req = new RequestMessage('JoinGame', new JoinGameMessage(gameNo));
+                conn.send(JSON.stringify(req));
+            });
+
+            $('#evt_LeaveGame').on('click', () => {
+                const gameNo = $('#gameNo').val();
+                const req = new RequestMessage('LeaveGame', new LeaveGameMessage(gameNo));
+                conn.send(JSON.stringify(req));
+            });
+
+            $('#evt_SearchAndJoinGame').on('click', () => {
+                const gameNo = $('#gameNo').val();
+                const req = new RequestMessage('SearchAndJoinGame', null);
+                conn.send(JSON.stringify(req));
+            });
+        });
+    </script>
+</body>
+
+</html>

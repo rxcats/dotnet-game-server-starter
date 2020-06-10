@@ -1,7 +1,7 @@
 using System.Net.WebSockets;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System.Reflection;
 using System;
 using System.Text;
@@ -34,23 +34,19 @@ namespace RxCats.WebSocketExtensions
             {
                 payload = Encoding.UTF8.GetString(buffer);
 
-                var req = JsonConvert.DeserializeObject<WebSocketMessageRequest<object>>(payload);
+                JObject jsonObj = JObject.Parse(payload);
 
-                logger.LogInformation("req {}", req);
+                string methodName = jsonObj["MessageType"].ToString();
 
-                Type type = typeof(WebSocketEventHandler);
+                Type type = eventHandler.GetType();
 
-                logger.LogInformation("type {}", type);
-
-                MethodInfo method = type.GetMethod(req.MessageType.ToString());
-
-                logger.LogInformation("method {}", method);
+                MethodInfo method = type.GetMethod(methodName);
 
                 ParameterInfo[] paramters = method.GetParameters();
 
                 if (paramters.Length == 0)
                 {
-                    method.Invoke(eventHandler, new object[] { });
+                    method.Invoke(eventHandler, null);
                 }
                 else if (paramters.Length == 1)
                 {
@@ -59,14 +55,29 @@ namespace RxCats.WebSocketExtensions
                 else
                 {
                     Type pType = paramters[1].ParameterType;
-                    var arg = JsonConvert.DeserializeObject(payload, pType);
-                    method.Invoke(eventHandler, new object[] { session, arg });
+                    
+                    object arg = jsonObj["Message"].ToObject(pType);
+
+                    logger.LogInformation("arg {}", arg);
+
+                    try
+                    {
+                        method.Invoke(eventHandler, new object[] { session, arg });
+                    }
+                    catch (Exception e)
+                    {
+                        logger.LogError("Invalid Operation, SessionId: {}, Payload: {}, ParameterType: {}, arg: {}", session.SessionId, payload, pType, arg);
+                        logger.LogError(e.StackTrace);
+                        throw e;
+                    }
+                    
                 }
             }
             catch (Exception e)
             {
                 logger.LogError("Invalid Packet, SessionId: {}, Payload: {}", session.SessionId, payload);
-                logger.LogError(e.Message);
+                logger.LogError(e.StackTrace);
+                throw e;
             }
 
             return Task.CompletedTask;

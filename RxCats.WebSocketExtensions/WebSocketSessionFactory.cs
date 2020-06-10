@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 
 namespace RxCats.WebSocketExtensions
 {
@@ -32,6 +31,13 @@ namespace RxCats.WebSocketExtensions
         public ConcurrentDictionary<long, WebSocketSession> All()
         {
             return sessions;
+        }
+
+        public WebSocketSession GetByCharacterNo(long characterNo)
+        {
+            WebSocketSession session;
+            sessions.TryGetValue(characterNo, out session);
+            return session;
         }
 
         public void Dispose()

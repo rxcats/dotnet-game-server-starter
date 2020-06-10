@@ -8,15 +8,41 @@ dotnet run --project RxCats.RealTime
 ### Connect (1)
 
 ```
-{"MessageType":"Connect","Message":{"CharacterNo":1,"Nickname":"1"}}
+{"MessageType":"Connect","Message":{"CharacterNo":1,"Nickname":"C1"}}
 ```
+
+### CreateGame
+```
+{"MessageType":"CreateGame","Message":{"GameName":"C1Game"}}
+```
+
+### LeaveGame - Requre Fix GameNo
+```
+{"MessageType":"LeaveGame","Message":{"GameNo":1}}
+```
+
+### ChatMessage - Requre Fix GameNo
+```
+{"MessageType":"GameChat","Message":{"GameNo":1,"Message":"Hello World!"}}
+```
+
 
 ### Connect (2)
 ```
-{"MessageType":"Connect","Message":{"CharacterNo":2,"Nickname":"2"}}
+{"MessageType":"Connect","Message":{"CharacterNo":2,"Nickname":"C2"}}
 ```
 
-### ChatMessage (1)
+### JoinGame - Requre Fix GameNo
 ```
-{"MessageType":"GameChat","Message":{"CharacterNo":1,"GameNo":0,"Message":"Hello World!"}}
+{"MessageType":"JoinGame","Message":{"GameNo":1}}
+```
+
+### LeaveGame - Requre Fix GameNo
+```
+{"MessageType":"LeaveGame","Message":{"GameNo":1}}
+```
+
+### ChatMessage - Requre Fix GameNo
+```
+{"MessageType":"GameChat","Message":{"GameNo":1,"Message":"Hello World!"}}
 ```

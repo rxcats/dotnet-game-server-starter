@@ -1,15 +1,9 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using RxCats.WebSocketExtensions;
 
 namespace RxCats.RealTime
@@ -31,6 +25,7 @@ namespace RxCats.RealTime
             services.AddSingleton<TextWebSocketHandler>();
             services.AddSingleton<WebSocketEventHandler>();
             services.AddSingleton<WebSocketSessionFactory>();
+            services.AddSingleton<GameSlotFactory>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

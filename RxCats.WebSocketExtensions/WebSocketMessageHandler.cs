@@ -37,7 +37,7 @@ namespace RxCats.WebSocketExtensions
                     }
                     catch (Exception e)
                     {
-                        logger.LogError(e.Message);
+                        logger.LogError(e.StackTrace);
                     }
                 }
                 else
@@ -71,7 +71,7 @@ namespace RxCats.WebSocketExtensions
                 }
                 catch(Exception e)
                 {
-                    logger.LogError(e.Message);
+                    logger.LogError(e.StackTrace);
                 }
                 finally
                 {

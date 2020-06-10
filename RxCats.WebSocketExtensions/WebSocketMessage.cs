@@ -14,7 +14,11 @@ namespace RxCats.WebSocketExtensions
     [JsonConverter(typeof(StringEnumConverter))]
     public enum WebSocketMessageType
     {
-        None, Ping, Pong, Connect, Disconnect, CreateGame, JoinGame, LeaveGame, InviteGame, ReadyGame, StartGame, EndGame, GiveUpGame, GameChat
+        None, Ping, Pong, 
+        
+        Connect, Disconnect, CreateGame, JoinGame, SearchAndJoinGame, LeaveGame, InviteGame, ReadyGame, StartGame, EndGame, GiveUpGame, GameChat,
+
+        ConnectResult, DisconnectResult, CreateGameResult, LeaveGameResult, GameChatResult, JoinGameResult
     }
     
     public class WebSocketMessageRequest<T>
@@ -26,11 +30,9 @@ namespace RxCats.WebSocketExtensions
 
     public class WebSocketMessageResponse<T>
     {
-        public string SessionId { get; set; }
+        public WebSocketMessageType ResultType { get; set; }
 
-        public WebSocketMessageType MessageType { get; set; }
-
-        public int Code { get; set; }
+        public int Code { get; set; } = 0;
 
         public T Result { get; set; }
 

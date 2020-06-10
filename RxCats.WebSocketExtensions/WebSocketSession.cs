@@ -14,7 +14,7 @@ namespace RxCats.WebSocketExtensions
 
         public long CharacterNo { get; set; } = 0;
 
-        public string Nickname { get; set; }
+        public string Nickname { get; set; } = "";
 
         public ConcurrentDictionary<string, object> Attributes { get; }
 
@@ -48,9 +48,7 @@ namespace RxCats.WebSocketExtensions
         {
             var res = new WebSocketMessageResponse<string>
             {
-                SessionId = this.SessionId,
-                MessageType = WebSocketMessageType.Pong,
-                Code = (int)WebSocketMessageResultCode.Ok,
+                ResultType = WebSocketMessageType.Pong,
                 Result = WebSocketMessageType.Pong.ToString()
             };
             return SendAsyncTextMessage(res);
@@ -60,9 +58,7 @@ namespace RxCats.WebSocketExtensions
         {
             var res = new WebSocketMessageResponse<string>
             {
-                SessionId = this.SessionId,
-                MessageType = WebSocketMessageType.Ping,
-                Code = (int)WebSocketMessageResultCode.Ok,
+                ResultType = WebSocketMessageType.Ping,
                 Result = WebSocketMessageType.Ping.ToString()
             };
             return SendAsyncTextMessage(res);

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -12,10 +13,53 @@ namespace RxCats.WebSocketExtensions
 
         private readonly WebSocketSessionFactory sessionFactory;
 
-        public WebSocketEventHandler(ILogger<WebSocketEventHandler> logger, WebSocketSessionFactory sessionFactory)
+        private readonly GameSlotFactory gameSlotFactory;
+
+        public WebSocketEventHandler(ILogger<WebSocketEventHandler> logger, WebSocketSessionFactory sessionFactory, GameSlotFactory gameSlotFactory)
         {
             this.logger = logger;
             this.sessionFactory = sessionFactory;
+            this.gameSlotFactory = gameSlotFactory;
+        }
+
+        private async void SendMessageByCharacterNos<T>(List<long> characterNos, WebSocketMessageResponse<T> res)
+        {
+            foreach (var characterNo in characterNos)
+            {
+                var session = sessionFactory.GetByCharacterNo(characterNo);
+                if (session != null)
+                {
+                    await session.SendAsyncTextMessage(res);
+                }
+            }
+        }
+
+        private async void BroadCastMessage<T>(long gameNo, WebSocketMessageResponse<T> res)
+        {
+            var characterNos = gameSlotFactory.GetSlotCharacterNos(gameNo);
+
+            foreach (var characterNo in characterNos)
+            {
+                var session = sessionFactory.GetByCharacterNo(characterNo);
+                if (session != null)
+                {
+                    await session.SendAsyncTextMessage(res);
+                }
+            }
+        }
+
+        private async void SendMessage<T>(WebSocketSession session, WebSocketMessageResponse<T> res)
+        {
+            await session.SendAsyncTextMessage(res);
+        }
+
+        public CharacterInfo GetCharacterInfoFromSession(WebSocketSession session)
+        {
+            return new CharacterInfo
+            {
+                CharacterNo = session.CharacterNo,
+                Nickname = session.Nickname
+            };
         }
 
         public void OnOpen(WebSocketSession session)
@@ -33,77 +77,172 @@ namespace RxCats.WebSocketExtensions
             return JsonConvert.DeserializeObject<WebSocketMessageRequest<T>>(payload);
         }
 
-        public void Connect(WebSocketSession session, WebSocketMessageRequest<CharacterInfo> req)
+        public void Connect(WebSocketSession session, CharacterInfo req)
         {
-            logger.LogInformation("MessageType: {}", req.MessageType);
-            logger.LogInformation("Message: {}", req.Message);
-
-            session.CharacterNo = req.Message.CharacterNo;
-            session.Nickname = req.Message.Nickname;
+            session.CharacterNo = req.CharacterNo;
+            session.Nickname = req.Nickname;
             sessionFactory.Add(session);
+
+            var res = new WebSocketMessageResponse<string>
+            {
+                ResultType = WebSocketMessageType.ConnectResult,
+            };
+
+            SendMessage(session, res);
         }
 
-        public void Disconnect(WebSocketSession session, string payload)
+        public void Disconnect(WebSocketSession session, CharacterInfo req)
         {
             sessionFactory.Remove(session);
+
+            var res = new WebSocketMessageResponse<string>
+            {
+                ResultType = WebSocketMessageType.DisconnectResult,
+            };
+
+            SendMessage(session, res);
         }
 
-        public void CreateGame(WebSocketSession session, string payload)
+        public void CreateGame(WebSocketSession session, CreateGameMessage req)
         {
+            CharacterInfo characterInfo = GetCharacterInfoFromSession(session);
 
+            GameSlotInfo slotInfo = gameSlotFactory.AddSlot(characterInfo, req.GameName);
+
+            var result = new GameInfo
+            {
+                GameName = slotInfo.GameName,
+                GameNo = slotInfo.GameNo,
+                Slot1CharacterInfo = characterInfo
+            };
+
+            var res = new WebSocketMessageResponse<GameInfo>
+            {
+                ResultType = WebSocketMessageType.CreateGameResult,
+                Result = result
+            };
+
+            SendMessage(session, res);
         }
 
-        public void JoinGame(WebSocketSession session, string payload)
+        public void JoinGame(WebSocketSession session, JoinGameMessage req)
         {
-            
+            CharacterInfo characterInfo = GetCharacterInfoFromSession(session);
+
+            GameSlotInfo slotInfo = gameSlotFactory.AddSlotMember(req.GameNo, characterInfo);
+
+            GameInfo result = new GameInfo
+            {
+                GameName = slotInfo.GameName,
+                GameNo = slotInfo.GameNo,
+                Slot1CharacterInfo = slotInfo.Slot1CharacterInfo,
+                Slot2CharacterInfo = slotInfo.Slot2CharacterInfo
+            };
+
+            var res = new WebSocketMessageResponse<GameInfo>
+            {
+                ResultType = WebSocketMessageType.JoinGameResult,
+                Result = result
+            };
+
+            BroadCastMessage(req.GameNo, res);
         }
 
-        public void LeaveGame(WebSocketSession session, string payload)
+        public void SearchAndJoinGame(WebSocketSession session)
         {
-            
+            CharacterInfo characterInfo = GetCharacterInfoFromSession(session);
+
+            GameSlotInfo slotInfo = gameSlotFactory.SearchSlot(characterInfo);
+
+            var result = new GameInfo
+            {
+                GameName = slotInfo.GameName,
+                GameNo = slotInfo.GameNo,
+                Slot1CharacterInfo = slotInfo.Slot1CharacterInfo,
+                Slot2CharacterInfo = slotInfo.Slot2CharacterInfo
+            };
+
+            BroadCastMessage(slotInfo.GameNo, new WebSocketMessageResponse<GameInfo>
+            {
+                ResultType = WebSocketMessageType.JoinGameResult,
+                Result = result
+            });
+        }
+
+        public void LeaveGame(WebSocketSession session, LeaveGameMessage req)
+        {
+            CharacterInfo characterInfo = GetCharacterInfoFromSession(session);
+
+            GameSlotInfo slotInfo = gameSlotFactory.RemoveSlotMember(req.GameNo, characterInfo);
+
+            if (slotInfo != null)
+            {
+                GameInfo result = new GameInfo
+                {
+                    GameName = slotInfo.GameName,
+                    GameNo = slotInfo.GameNo,
+                    Slot1CharacterInfo = slotInfo.Slot1CharacterInfo,
+                    Slot2CharacterInfo = slotInfo.Slot2CharacterInfo
+                };
+
+                var masterSession = sessionFactory.GetByCharacterNo(slotInfo.MasterCharacterNo);
+
+                var res = new WebSocketMessageResponse<GameInfo>
+                {
+                    ResultType = WebSocketMessageType.LeaveGameResult,
+                    Result = result
+                };
+
+                SendMessage(masterSession, res);
+            }
+
+            SendMessage(session, new WebSocketMessageResponse<GameInfo>
+            {
+                ResultType = WebSocketMessageType.LeaveGameResult
+            });
         }
 
         public void InviteGame(WebSocketSession session, string payload)
         {
-            
+
         }
 
         public void ReadyGame(WebSocketSession session, string payload)
         {
-            
+
         }
 
         public void StartGame(WebSocketSession session, string payload)
         {
-            
+
         }
 
         public void EndGame(WebSocketSession session, string payload)
         {
-            
+
         }
 
         public void GiveUpGame(WebSocketSession session, string payload)
         {
-            
+
         }
 
-        public async void GameChat(WebSocketSession session, WebSocketMessageRequest<GameChatMessage> req)
+        public void GameChat(WebSocketSession session, GameChatMessage req)
         {
-            var res = new WebSocketMessageResponse<string>
+            var result = new GameChatResult
             {
-                SessionId = session.SessionId,
-                MessageType = WebSocketMessageType.GameChat,
-                Code = (int)WebSocketMessageResultCode.Ok,
-                Result = req.Message.Message
+                CharacterNo = session.CharacterNo,
+                GameNo = req.GameNo,
+                Message = req.Message
             };
 
-            var sessions = sessionFactory.All();
-
-            foreach (var s in sessions)
+            var res = new WebSocketMessageResponse<GameChatResult>
             {
-                await s.Value.SendAsyncTextMessage(res);
-            }
+                ResultType = WebSocketMessageType.GameChatResult,
+                Result = result
+            };
+
+            BroadCastMessage(req.GameNo, res);
         }
     }
 }
