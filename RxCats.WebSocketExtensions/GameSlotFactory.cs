@@ -1,27 +1,13 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using RxCats.WebSocketExtensions.WebSocketMessageBody;
 using static System.Threading.Interlocked;
 
 namespace RxCats.WebSocketExtensions
 {
-    public class GameSlotInfo
-    {
-        public long GameNo { get; set; }
-
-        public string GameName { get; set; }
-
-        public long MasterCharacterNo { get; set; }
-
-        public CharacterInfo Slot1CharacterInfo { get; set; }
-
-        public CharacterInfo Slot2CharacterInfo { get; set; }
-    }
-
     public class GameSlotFactory : IDisposable
     {
-        private static long counter = 0;
+        private static long _counter;
 
         private readonly ConcurrentDictionary<long, GameSlotInfo> slots;
 
@@ -32,14 +18,13 @@ namespace RxCats.WebSocketExtensions
 
         private static long IncrementAndGet()
         {
-            Increment(ref counter);
-            return counter;
+            Increment(ref _counter);
+            return _counter;
         }
 
         public GameSlotInfo GetSlot(long gameNo)
         {
-            GameSlotInfo info;
-            slots.TryGetValue(gameNo, out info);
+            slots.TryGetValue(gameNo, out var info);
             return info;
         }
 
@@ -86,14 +71,12 @@ namespace RxCats.WebSocketExtensions
 
         public GameSlotInfo FindAndException(long gameNo)
         {
-            if (slots.TryGetValue(gameNo, out GameSlotInfo info))
+            if (slots.TryGetValue(gameNo, out var info))
             {
                 return info;
             }
-            else
-            {
-                throw new InvalidOperationException("Cannot Find GameNo");
-            }
+
+            throw new InvalidOperationException("Cannot Find GameNo");
         }
 
         public GameSlotInfo SearchSlot(CharacterInfo characterInfo, string gameName = "")
@@ -130,14 +113,17 @@ namespace RxCats.WebSocketExtensions
                 MasterCharacterNo = info.MasterCharacterNo,
             };
 
-            if (info.Slot1CharacterInfo == null) {
+            if (info.Slot1CharacterInfo == null)
+            {
                 modify.Slot1CharacterInfo = characterInfo;
                 modify.Slot2CharacterInfo = info.Slot2CharacterInfo;
-            } else {
+            }
+            else
+            {
                 modify.Slot1CharacterInfo = info.Slot1CharacterInfo;
                 modify.Slot2CharacterInfo = characterInfo;
             }
-            
+
             slots.TryUpdate(gameNo, modify, info);
 
             return modify;
@@ -145,62 +131,52 @@ namespace RxCats.WebSocketExtensions
 
         public GameSlotInfo RemoveSlotMember(long gameNo, CharacterInfo characterInfo)
         {
-            if (slots.TryGetValue(gameNo, out GameSlotInfo info))
+            if (!slots.TryGetValue(gameNo, out GameSlotInfo info)) throw new InvalidOperationException("Cannot Find GameNo");
+            
+            // 참가자가 1명인 경우 방 제거
+            if (info.Slot1CharacterInfo == null || info.Slot2CharacterInfo == null)
             {
-                // 참가자가 1명인 경우 방 제거
-                if (info.Slot1CharacterInfo == null || info.Slot2CharacterInfo == null)
-                {
-                    RemoveSlot(gameNo);
-                    return null;
-                }
-
-                bool isMaster = (info.MasterCharacterNo == characterInfo.CharacterNo);
-
-                CharacterInfo slot1CharacterInfo = null;
-                CharacterInfo slot2CharacterInfo = null;
-                long masterCharacterNo = 0;
-
-                if (info.Slot1CharacterInfo.CharacterNo == characterInfo.CharacterNo)
-                {
-                    slot1CharacterInfo = null;
-                    slot2CharacterInfo = info.Slot2CharacterInfo;
-                    masterCharacterNo = info.Slot2CharacterInfo.CharacterNo;
-                }
-                else if (info.Slot2CharacterInfo.CharacterNo == characterInfo.CharacterNo)
-                {
-                    slot2CharacterInfo = null;
-                    slot1CharacterInfo = info.Slot1CharacterInfo;
-                    masterCharacterNo = info.Slot1CharacterInfo.CharacterNo;
-                }
-
-                var modify = new GameSlotInfo
-                {
-                    GameNo = info.GameNo,
-                    GameName = info.GameName,
-                    MasterCharacterNo = masterCharacterNo,
-                    Slot1CharacterInfo = slot1CharacterInfo,
-                    Slot2CharacterInfo = slot2CharacterInfo
-                };
-
-                slots.TryUpdate(gameNo, modify, info);
-
-                return modify;
+                RemoveSlot(gameNo);
+                return null;
             }
-            else
+
+            CharacterInfo slot1CharacterInfo = null;
+            CharacterInfo slot2CharacterInfo = null;
+            long masterCharacterNo = 0;
+
+            if (info.Slot1CharacterInfo.CharacterNo == characterInfo.CharacterNo)
             {
-                throw new InvalidOperationException("Cannot Find GameNo");
+                slot2CharacterInfo = info.Slot2CharacterInfo;
+                masterCharacterNo = info.Slot2CharacterInfo.CharacterNo;
             }
+            else if (info.Slot2CharacterInfo.CharacterNo == characterInfo.CharacterNo)
+            {
+                slot1CharacterInfo = info.Slot1CharacterInfo;
+                masterCharacterNo = info.Slot1CharacterInfo.CharacterNo;
+            }
+
+            var modify = new GameSlotInfo
+            {
+                GameNo = info.GameNo,
+                GameName = info.GameName,
+                MasterCharacterNo = masterCharacterNo,
+                Slot1CharacterInfo = slot1CharacterInfo,
+                Slot2CharacterInfo = slot2CharacterInfo
+            };
+
+            slots.TryUpdate(gameNo, modify, info);
+
+            return modify;
         }
 
         public void RemoveSlot(long gameNo)
         {
-            slots.TryRemove(gameNo, out GameSlotInfo info);
+            slots.TryRemove(gameNo, out _);
         }
 
         public void Dispose()
         {
             slots.Clear();
         }
-
     }
 }

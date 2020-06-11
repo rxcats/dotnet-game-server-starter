@@ -24,8 +24,7 @@ namespace RxCats.WebSocketExtensions
 
         public void Remove(WebSocketSession session)
         {
-            WebSocketSession removed;
-            sessions.TryRemove(session.CharacterNo, out removed);
+            sessions.TryRemove(session.CharacterNo, out _);
         }
 
         public ConcurrentDictionary<long, WebSocketSession> All()
@@ -35,8 +34,7 @@ namespace RxCats.WebSocketExtensions
 
         public WebSocketSession GetByCharacterNo(long characterNo)
         {
-            WebSocketSession session;
-            sessions.TryGetValue(characterNo, out session);
+            sessions.TryGetValue(characterNo, out var session);
             return session;
         }
 

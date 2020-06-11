@@ -1,19 +1,24 @@
-using System.Collections.Generic;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
-namespace RxCats.WebSocketExtensions.WebSocketMessageBody
+namespace RxCats.WebSocketExtensions
 {
     public class CharacterInfo
     {
-        public long CharacterNo { get; set; } = 0;
+        public long CharacterNo { get; set; }
 
         public string Nickname { get; set; } = "";
+
+        public string Avatar { get; set; } = "";
     }
 
-    public class GameInfo
+    public class GameSlotInfo
     {
         public string GameName { get; set; }
 
         public long GameNo { get; set; }
+
+        public long MasterCharacterNo { get; set; }
 
         public CharacterInfo Slot1CharacterInfo { get; set; }
 
@@ -22,9 +27,12 @@ namespace RxCats.WebSocketExtensions.WebSocketMessageBody
         public GameState GameState { get; set; } = GameState.Wait;
     }
 
+    [JsonConverter(typeof(StringEnumConverter))]
     public enum GameState
     {
-        Wait, Ready, Started
+        Wait,
+        Ready,
+        Started
     }
 
     public class GameResultInfo
@@ -42,24 +50,9 @@ namespace RxCats.WebSocketExtensions.WebSocketMessageBody
         public long LoserScore { get; set; }
     }
 
-    public class ConnectMessage
-    {
-        public CharacterInfo Character { get; set; }
-    }
-
-    public class DisconnectMessage
-    {
-        public long CharacterNo { get; set; }
-    }
-
     public class CreateGameMessage
     {
         public string GameName { get; set; }
-    }
-
-    public class CreateGameResult
-    {
-        public GameInfo GameInfo { get; set; }
     }
 
     public class JoinGameMessage
@@ -67,25 +60,13 @@ namespace RxCats.WebSocketExtensions.WebSocketMessageBody
         public long GameNo { get; set; }
     }
 
-    public class JoinGameResult
-    {
-        public GameInfo GameInfo { get; set; }
-    }
-
     public class LeaveGameMessage
     {
         public long GameNo { get; set; }
     }
 
-    public class LeaveGameResult
-    {
-        public GameInfo GameInfo { get; set; }
-    }
-
     public class InviteGameMessage
     {
-        public long CharacterNo { get; set; }
-
         public long TargetCharacterNo { get; set; }
 
         public long GameNo { get; set; }
@@ -93,26 +74,12 @@ namespace RxCats.WebSocketExtensions.WebSocketMessageBody
 
     public class ReadyGameMessage
     {
-        public long CharacterNo { get; set; }
-
         public long GameNo { get; set; }
-    }
-
-    public class ReadyGameResult
-    {
-        public GameInfo GameInfo { get; set; }
     }
 
     public class StartGameMessage
     {
-        public long CharacterNo { get; set; }
-
         public long GameNo { get; set; }
-    }
-
-    public class StartGameResult
-    {
-        public GameInfo GameInfo { get; set; }
     }
 
     public class EndGameResult
@@ -129,7 +96,7 @@ namespace RxCats.WebSocketExtensions.WebSocketMessageBody
 
     public class GameChatResult
     {
-        public long CharacterNo { get; set; }
+        public CharacterInfo CharacterInfo { get; set; }
 
         public long GameNo { get; set; }
 

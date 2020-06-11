@@ -1,6 +1,5 @@
 using System;
 using System.Net.WebSockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -18,7 +17,8 @@ namespace RxCats.WebSocketExtensions
 
         private static readonly int BUFFER_SIZE = 4096;
 
-        public WebSocketMessageHandler(RequestDelegate next, ILogger<WebSocketMessageHandler> logger, TextWebSocketHandler textWebSocketHandler)
+        public WebSocketMessageHandler(RequestDelegate next, ILogger<WebSocketMessageHandler> logger,
+            TextWebSocketHandler textWebSocketHandler)
         {
             this.next = next;
             this.logger = logger;
@@ -51,7 +51,7 @@ namespace RxCats.WebSocketExtensions
             }
         }
 
-        public async Task Listen(HttpContext context)
+        private async Task Listen(HttpContext context)
         {
             WebSocket webSocket = await context.WebSockets.AcceptWebSocketAsync();
 
@@ -61,7 +61,8 @@ namespace RxCats.WebSocketExtensions
 
             var buffer = new byte[BUFFER_SIZE];
 
-            WebSocketReceiveResult result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+            WebSocketReceiveResult result =
+                await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 
             while (!result.CloseStatus.HasValue)
             {
@@ -69,7 +70,7 @@ namespace RxCats.WebSocketExtensions
                 {
                     await textWebSocketHandler.HandleTextMessage(webSocketSession, buffer);
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     logger.LogError(e.StackTrace);
                 }
@@ -78,7 +79,6 @@ namespace RxCats.WebSocketExtensions
                     buffer = new byte[BUFFER_SIZE];
                     result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                 }
-                                
             }
 
             await webSocket.CloseAsync(result.CloseStatus.Value, result.CloseStatusDescription, CancellationToken.None);

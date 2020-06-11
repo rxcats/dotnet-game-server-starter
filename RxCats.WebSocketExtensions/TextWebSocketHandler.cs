@@ -1,10 +1,10 @@
+using System;
 using System.Net.WebSockets;
+using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using System.Reflection;
-using System;
-using System.Text;
 
 namespace RxCats.WebSocketExtensions
 {
@@ -27,57 +27,80 @@ namespace RxCats.WebSocketExtensions
             return Task.CompletedTask;
         }
 
+        private MethodInfo GetMethod(JObject jsonObj)
+        {
+            var messageType = jsonObj["MessageType"];
+
+            if (messageType == null)
+            {
+                throw new InvalidOperationException();
+            }
+
+            var type = eventHandler.GetType();
+
+            var method = type.GetMethod(messageType.ToString());
+
+            if (method == null)
+            {
+                throw new InvalidOperationException();
+            }
+
+            return method;
+        }
+
+        private object GetArgument(JObject jsonObj, Type parameterType)
+        {
+            return jsonObj["Message"]?.ToObject(parameterType);
+        }
+
         public Task HandleTextMessage(WebSocketSession session, byte[] buffer)
         {
-            string payload = "";
+            var payload = "";
             try
             {
                 payload = Encoding.UTF8.GetString(buffer);
 
-                JObject jsonObj = JObject.Parse(payload);
+                var jsonObj = JObject.Parse(payload);
 
-                string methodName = jsonObj["MessageType"].ToString();
+                var method = GetMethod(jsonObj);
 
-                Type type = eventHandler.GetType();
+                var parameters = method.GetParameters();
 
-                MethodInfo method = type.GetMethod(methodName);
-
-                ParameterInfo[] paramters = method.GetParameters();
-
-                if (paramters.Length == 0)
+                switch (parameters.Length)
                 {
-                    method.Invoke(eventHandler, null);
-                }
-                else if (paramters.Length == 1)
-                {
-                    method.Invoke(eventHandler, new object[] { session });
-                }
-                else
-                {
-                    Type pType = paramters[1].ParameterType;
-                    
-                    object arg = jsonObj["Message"].ToObject(pType);
-
-                    logger.LogInformation("arg {}", arg);
-
-                    try
+                    case 0:
+                        method.Invoke(eventHandler, null);
+                        break;
+                    case 1:
+                        method.Invoke(eventHandler, new object[] { session });
+                        break;
+                    default:
                     {
-                        method.Invoke(eventHandler, new object[] { session, arg });
+                        var arg = GetArgument(jsonObj, parameters[1].ParameterType);
+
+                        logger.LogInformation("arg {}", arg);
+
+                        try
+                        {
+                            method.Invoke(eventHandler, new[] { session, arg });
+                        }
+                        catch (Exception e)
+                        {
+                            logger.LogError("Invalid Operation, SessionId: {}, Payload: {}, arg: {}",
+                                session.SessionId, payload, arg);
+                            logger.LogError(e.StackTrace);
+                            throw;
+                        }
+
+                        break;
                     }
-                    catch (Exception e)
-                    {
-                        logger.LogError("Invalid Operation, SessionId: {}, Payload: {}, ParameterType: {}, arg: {}", session.SessionId, payload, pType, arg);
-                        logger.LogError(e.StackTrace);
-                        throw e;
-                    }
-                    
                 }
             }
             catch (Exception e)
             {
                 logger.LogError("Invalid Packet, SessionId: {}, Payload: {}", session.SessionId, payload);
                 logger.LogError(e.StackTrace);
-                throw e;
+                throw;
             }
 
             return Task.CompletedTask;

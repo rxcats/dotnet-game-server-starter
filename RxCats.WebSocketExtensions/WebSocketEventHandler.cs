@@ -1,9 +1,6 @@
-using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using RxCats.WebSocketExtensions.WebSocketMessageBody;
 
 namespace RxCats.WebSocketExtensions
 {
@@ -15,7 +12,8 @@ namespace RxCats.WebSocketExtensions
 
         private readonly GameSlotFactory gameSlotFactory;
 
-        public WebSocketEventHandler(ILogger<WebSocketEventHandler> logger, WebSocketSessionFactory sessionFactory, GameSlotFactory gameSlotFactory)
+        public WebSocketEventHandler(ILogger<WebSocketEventHandler> logger, WebSocketSessionFactory sessionFactory,
+            GameSlotFactory gameSlotFactory)
         {
             this.logger = logger;
             this.sessionFactory = sessionFactory;
@@ -107,16 +105,9 @@ namespace RxCats.WebSocketExtensions
         {
             CharacterInfo characterInfo = GetCharacterInfoFromSession(session);
 
-            GameSlotInfo slotInfo = gameSlotFactory.AddSlot(characterInfo, req.GameName);
+            GameSlotInfo result = gameSlotFactory.AddSlot(characterInfo, req.GameName);
 
-            var result = new GameInfo
-            {
-                GameName = slotInfo.GameName,
-                GameNo = slotInfo.GameNo,
-                Slot1CharacterInfo = characterInfo
-            };
-
-            var res = new WebSocketMessageResponse<GameInfo>
+            var res = new WebSocketMessageResponse<GameSlotInfo>
             {
                 ResultType = WebSocketMessageType.CreateGameResult,
                 Result = result
@@ -129,17 +120,9 @@ namespace RxCats.WebSocketExtensions
         {
             CharacterInfo characterInfo = GetCharacterInfoFromSession(session);
 
-            GameSlotInfo slotInfo = gameSlotFactory.AddSlotMember(req.GameNo, characterInfo);
+            GameSlotInfo result = gameSlotFactory.AddSlotMember(req.GameNo, characterInfo);
 
-            GameInfo result = new GameInfo
-            {
-                GameName = slotInfo.GameName,
-                GameNo = slotInfo.GameNo,
-                Slot1CharacterInfo = slotInfo.Slot1CharacterInfo,
-                Slot2CharacterInfo = slotInfo.Slot2CharacterInfo
-            };
-
-            var res = new WebSocketMessageResponse<GameInfo>
+            var res = new WebSocketMessageResponse<GameSlotInfo>
             {
                 ResultType = WebSocketMessageType.JoinGameResult,
                 Result = result
@@ -152,17 +135,9 @@ namespace RxCats.WebSocketExtensions
         {
             CharacterInfo characterInfo = GetCharacterInfoFromSession(session);
 
-            GameSlotInfo slotInfo = gameSlotFactory.SearchSlot(characterInfo);
+            GameSlotInfo result = gameSlotFactory.SearchSlot(characterInfo);
 
-            var result = new GameInfo
-            {
-                GameName = slotInfo.GameName,
-                GameNo = slotInfo.GameNo,
-                Slot1CharacterInfo = slotInfo.Slot1CharacterInfo,
-                Slot2CharacterInfo = slotInfo.Slot2CharacterInfo
-            };
-
-            BroadCastMessage(slotInfo.GameNo, new WebSocketMessageResponse<GameInfo>
+            BroadCastMessage(result.GameNo, new WebSocketMessageResponse<GameSlotInfo>
             {
                 ResultType = WebSocketMessageType.JoinGameResult,
                 Result = result
@@ -173,21 +148,13 @@ namespace RxCats.WebSocketExtensions
         {
             CharacterInfo characterInfo = GetCharacterInfoFromSession(session);
 
-            GameSlotInfo slotInfo = gameSlotFactory.RemoveSlotMember(req.GameNo, characterInfo);
+            GameSlotInfo result = gameSlotFactory.RemoveSlotMember(req.GameNo, characterInfo);
 
-            if (slotInfo != null)
+            if (result != null)
             {
-                GameInfo result = new GameInfo
-                {
-                    GameName = slotInfo.GameName,
-                    GameNo = slotInfo.GameNo,
-                    Slot1CharacterInfo = slotInfo.Slot1CharacterInfo,
-                    Slot2CharacterInfo = slotInfo.Slot2CharacterInfo
-                };
+                var masterSession = sessionFactory.GetByCharacterNo(result.MasterCharacterNo);
 
-                var masterSession = sessionFactory.GetByCharacterNo(slotInfo.MasterCharacterNo);
-
-                var res = new WebSocketMessageResponse<GameInfo>
+                var res = new WebSocketMessageResponse<GameSlotInfo>
                 {
                     ResultType = WebSocketMessageType.LeaveGameResult,
                     Result = result
@@ -196,7 +163,7 @@ namespace RxCats.WebSocketExtensions
                 SendMessage(masterSession, res);
             }
 
-            SendMessage(session, new WebSocketMessageResponse<GameInfo>
+            SendMessage(session, new WebSocketMessageResponse<GameSlotInfo>
             {
                 ResultType = WebSocketMessageType.LeaveGameResult
             });
@@ -204,34 +171,29 @@ namespace RxCats.WebSocketExtensions
 
         public void InviteGame(WebSocketSession session, string payload)
         {
-
         }
 
         public void ReadyGame(WebSocketSession session, string payload)
         {
-
         }
 
         public void StartGame(WebSocketSession session, string payload)
         {
-
         }
 
         public void EndGame(WebSocketSession session, string payload)
         {
-
         }
 
         public void GiveUpGame(WebSocketSession session, string payload)
         {
-
         }
 
         public void GameChat(WebSocketSession session, GameChatMessage req)
         {
             var result = new GameChatResult
             {
-                CharacterNo = session.CharacterNo,
+                CharacterInfo = GetCharacterInfoFromSession(session),
                 GameNo = req.GameNo,
                 Message = req.Message
             };
