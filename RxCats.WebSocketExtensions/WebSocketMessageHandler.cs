@@ -15,7 +15,7 @@ namespace RxCats.WebSocketExtensions
 
         private readonly TextWebSocketHandler textWebSocketHandler;
 
-        private static readonly int BUFFER_SIZE = 4096;
+        private const int BufferSize = 4096;
 
         public WebSocketMessageHandler(RequestDelegate next, ILogger<WebSocketMessageHandler> logger,
             TextWebSocketHandler textWebSocketHandler)
@@ -59,7 +59,7 @@ namespace RxCats.WebSocketExtensions
 
             await textWebSocketHandler.AfterConnectionEstablished(webSocketSession);
 
-            var buffer = new byte[BUFFER_SIZE];
+            var buffer = new byte[BufferSize];
 
             WebSocketReceiveResult result =
                 await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
@@ -70,13 +70,19 @@ namespace RxCats.WebSocketExtensions
                 {
                     await textWebSocketHandler.HandleTextMessage(webSocketSession, buffer);
                 }
+                catch (ServiceException e)
+                {
+                    await webSocketSession.SendAsyncErrorMessage(e.Message, e.ResultCode);
+                    logger.LogError(e.StackTrace);
+                }
                 catch (Exception e)
                 {
+                    await webSocketSession.SendAsyncErrorMessage(e.Message);
                     logger.LogError(e.StackTrace);
                 }
                 finally
                 {
-                    buffer = new byte[BUFFER_SIZE];
+                    buffer = new byte[BufferSize];
                     result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
                 }
             }

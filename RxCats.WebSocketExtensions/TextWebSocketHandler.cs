@@ -33,7 +33,7 @@ namespace RxCats.WebSocketExtensions
 
             if (messageType == null)
             {
-                throw new InvalidOperationException();
+                throw new ServiceException();
             }
 
             var type = eventHandler.GetType();
@@ -42,7 +42,7 @@ namespace RxCats.WebSocketExtensions
 
             if (method == null)
             {
-                throw new InvalidOperationException();
+                throw new ServiceException();
             }
 
             return method;

@@ -15,6 +15,8 @@ namespace RxCats.WebSocketExtensions
         public long CharacterNo { get; set; }
 
         public string Nickname { get; set; } = "";
+        
+        public string Avatar { get; set; } = "";
 
         private readonly ConcurrentDictionary<string, object> attributes;
 
@@ -23,8 +25,8 @@ namespace RxCats.WebSocketExtensions
         public WebSocketSession(WebSocket webSocket, string sessionId)
         {
             this.webSocket = webSocket;
-            this.SessionId = sessionId;
-            this.attributes = new ConcurrentDictionary<string, object>();
+            SessionId = sessionId;
+            attributes = new ConcurrentDictionary<string, object>();
         }
 
         public ConcurrentDictionary<string, object> GetAttributes()
@@ -48,6 +50,17 @@ namespace RxCats.WebSocketExtensions
             var bytes = Encoding.UTF8.GetBytes(json);
             return webSocket.SendAsync(new ArraySegment<byte>(bytes, 0, bytes.Length),
                 System.Net.WebSockets.WebSocketMessageType.Text, true, CancellationToken.None);
+        }
+
+        public Task SendAsyncErrorMessage(string message = "", WebSocketMessageResultCode resultCode = WebSocketMessageResultCode.Error)
+        {
+            var res = new WebSocketMessageResponse<string>
+            {
+                ResultType = WebSocketMessageType.ErrorResult,
+                Code = (int)resultCode,
+                Result = message
+            };
+            return SendAsyncTextMessage(res);
         }
 
         public Task SendAsyncPong()

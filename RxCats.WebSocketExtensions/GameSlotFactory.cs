@@ -76,7 +76,7 @@ namespace RxCats.WebSocketExtensions
                 return info;
             }
 
-            throw new InvalidOperationException("Cannot Find GameNo");
+            throw new ServiceException("Cannot Find GameNo");
         }
 
         public GameSlotInfo SearchSlot(CharacterInfo characterInfo, string gameName = "")
@@ -103,7 +103,7 @@ namespace RxCats.WebSocketExtensions
 
             if (IsFull(info))
             {
-                throw new InvalidOperationException("GameSlot Is Full");
+                throw new ServiceException("GameSlot Is Full");
             }
 
             var modify = new GameSlotInfo
@@ -131,7 +131,7 @@ namespace RxCats.WebSocketExtensions
 
         public GameSlotInfo RemoveSlotMember(long gameNo, CharacterInfo characterInfo)
         {
-            if (!slots.TryGetValue(gameNo, out GameSlotInfo info)) throw new InvalidOperationException("Cannot Find GameNo");
+            if (!slots.TryGetValue(gameNo, out GameSlotInfo info)) throw new ServiceException("Cannot Find GameNo");
             
             // 참가자가 1명인 경우 방 제거
             if (info.Slot1CharacterInfo == null || info.Slot2CharacterInfo == null)

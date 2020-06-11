@@ -4,7 +4,7 @@ using Newtonsoft.Json.Converters;
 
 namespace RxCats.WebSocketExtensions
 {
-    public enum WebSocketMessageResultCode : int
+    public enum WebSocketMessageResultCode
     {
         Ok = 0,
 
@@ -17,6 +17,7 @@ namespace RxCats.WebSocketExtensions
         None,
         Ping,
         Pong,
+        ErrorResult,
 
         Connect,
         Disconnect,
@@ -30,7 +31,7 @@ namespace RxCats.WebSocketExtensions
         EndGame,
         GiveUpGame,
         GameChat,
-
+        
         ConnectResult,
         DisconnectResult,
         CreateGameResult,

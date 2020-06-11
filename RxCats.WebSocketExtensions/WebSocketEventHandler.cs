@@ -56,7 +56,8 @@ namespace RxCats.WebSocketExtensions
             return new CharacterInfo
             {
                 CharacterNo = session.CharacterNo,
-                Nickname = session.Nickname
+                Nickname = session.Nickname,
+                Avatar = session.Avatar
             };
         }
 
