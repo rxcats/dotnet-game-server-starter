@@ -68,7 +68,21 @@ namespace RxCats.WebSocketExtensions
 
         public void OnClose(WebSocketSession session)
         {
+            if (session.IsJoinedGame())
+            {
+                KickCharacterFromGame(session);
+            }
+
             sessionFactory.Remove(session);
+        }
+
+        public void Pong(WebSocketSession session)
+        {
+        }
+
+        public void Ping(WebSocketSession session)
+        {
+            session.SendAsyncPong();
         }
 
         private WebSocketMessageRequest<T> ConvertMessage<T>(string payload)
@@ -84,19 +98,19 @@ namespace RxCats.WebSocketExtensions
 
             var res = new WebSocketMessageResponse<string>
             {
-                ResultType = WebSocketMessageType.ConnectResult,
+                ResultType = WebSocketMessageType.ConnectResult
             };
 
             SendMessage(session, res);
         }
 
-        public void Disconnect(WebSocketSession session, CharacterInfo req)
+        public void Disconnect(WebSocketSession session)
         {
             sessionFactory.Remove(session);
 
             var res = new WebSocketMessageResponse<string>
             {
-                ResultType = WebSocketMessageType.DisconnectResult,
+                ResultType = WebSocketMessageType.DisconnectResult
             };
 
             SendMessage(session, res);
@@ -104,9 +118,16 @@ namespace RxCats.WebSocketExtensions
 
         public void CreateGame(WebSocketSession session, CreateGameMessage req)
         {
+            if (session.IsJoinedGame())
+            {
+                throw new ServiceException("Already Joined Game");
+            }
+
             CharacterInfo characterInfo = GetCharacterInfoFromSession(session);
 
             GameSlotInfo result = gameSlotFactory.AddSlot(characterInfo, req.GameName);
+
+            session.JoinGameNo = result.GameNo;
 
             var res = new WebSocketMessageResponse<GameSlotInfo>
             {
@@ -119,9 +140,16 @@ namespace RxCats.WebSocketExtensions
 
         public void JoinGame(WebSocketSession session, JoinGameMessage req)
         {
+            if (session.IsJoinedGame())
+            {
+                throw new ServiceException("Already Joined Game");
+            }
+
             CharacterInfo characterInfo = GetCharacterInfoFromSession(session);
 
             GameSlotInfo result = gameSlotFactory.AddSlotMember(req.GameNo, characterInfo);
+
+            session.JoinGameNo = result.GameNo;
 
             var res = new WebSocketMessageResponse<GameSlotInfo>
             {
@@ -134,9 +162,16 @@ namespace RxCats.WebSocketExtensions
 
         public void SearchAndJoinGame(WebSocketSession session)
         {
+            if (session.IsJoinedGame())
+            {
+                throw new ServiceException("Already Joined Game");
+            }
+
             CharacterInfo characterInfo = GetCharacterInfoFromSession(session);
 
             GameSlotInfo result = gameSlotFactory.SearchSlot(characterInfo);
+
+            session.JoinGameNo = result.GameNo;
 
             BroadCastMessage(result.GameNo, new WebSocketMessageResponse<GameSlotInfo>
             {
@@ -145,14 +180,26 @@ namespace RxCats.WebSocketExtensions
             });
         }
 
-        public void LeaveGame(WebSocketSession session, LeaveGameMessage req)
+        private void KickCharacterFromGame(WebSocketSession session)
         {
             CharacterInfo characterInfo = GetCharacterInfoFromSession(session);
 
-            GameSlotInfo result = gameSlotFactory.RemoveSlotMember(req.GameNo, characterInfo);
+            List<long> joinCharacterNos = gameSlotFactory.GetSlotCharacterNos(session.JoinGameNo);
 
-            if (result != null)
+            GameSlotInfo result = gameSlotFactory.RemoveSlotMember(session.JoinGameNo, characterInfo);
+
+            if (result == null)
             {
+                foreach (var no in joinCharacterNos)
+                {
+                    var s = sessionFactory.GetByCharacterNo(no);
+                    s.LeaveGame();
+                }
+            }
+            else
+            {
+                session.LeaveGame();
+
                 var masterSession = sessionFactory.GetByCharacterNo(result.MasterCharacterNo);
 
                 var res = new WebSocketMessageResponse<GameSlotInfo>
@@ -163,10 +210,38 @@ namespace RxCats.WebSocketExtensions
 
                 SendMessage(masterSession, res);
             }
+        }
+
+        public void LeaveGame(WebSocketSession session, LeaveGameMessage req)
+        {
+            if (!session.IsJoinedGame())
+            {
+                throw new ServiceException("Already Left Game");
+            }
+
+            KickCharacterFromGame(session);
 
             SendMessage(session, new WebSocketMessageResponse<GameSlotInfo>
             {
                 ResultType = WebSocketMessageType.LeaveGameResult
+            });
+        }
+
+        public void GetGameSlotList(WebSocketSession session)
+        {
+            SendMessage(session, new WebSocketMessageResponse<List<GameSlotInfo>>
+            {
+                ResultType = WebSocketMessageType.GetGameSlotListResult,
+                Result = gameSlotFactory.All()
+            });
+        }
+
+        public void GetGameSlot(WebSocketSession session)
+        {
+            SendMessage(session, new WebSocketMessageResponse<GameSlotInfo>
+            {
+                ResultType = WebSocketMessageType.GetGameSlotResult,
+                Result = gameSlotFactory.GetSlot(session.JoinGameNo)
             });
         }
 

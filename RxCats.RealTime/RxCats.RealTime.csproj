@@ -1,12 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <ItemGroup>
-    <ProjectReference Include="..\RxCats.WebSocketExtensions\RxCats.WebSocketExtensions.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\RxCats.WebSocketExtensions\RxCats.WebSocketExtensions.csproj" />
+        <ProjectReference Include="..\RxCats.CronJob\RxCats.CronJob.csproj" />
+    </ItemGroup>
 
-  <PropertyGroup>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>netcoreapp3.1</TargetFramework>
+    </PropertyGroup>
 
 
 </Project>

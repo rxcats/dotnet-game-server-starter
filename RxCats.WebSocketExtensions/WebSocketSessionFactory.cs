@@ -27,6 +27,11 @@ namespace RxCats.WebSocketExtensions
             sessions.TryRemove(session.CharacterNo, out _);
         }
 
+        public void RemoveByKey(long key)
+        {
+            sessions.TryRemove(key, out _);
+        }
+
         public ConcurrentDictionary<long, WebSocketSession> All()
         {
             return sessions;

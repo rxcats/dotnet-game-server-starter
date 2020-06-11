@@ -17,6 +17,8 @@ namespace RxCats.WebSocketExtensions
         public string Nickname { get; set; } = "";
         
         public string Avatar { get; set; } = "";
+        
+        public long JoinGameNo { get; set; }
 
         private readonly ConcurrentDictionary<string, object> attributes;
 
@@ -37,6 +39,16 @@ namespace RxCats.WebSocketExtensions
         public bool IsOpen()
         {
             return webSocket.State == WebSocketState.Open;
+        }
+
+        public bool IsJoinedGame()
+        {
+            return JoinGameNo > 0;
+        }
+
+        public void LeaveGame()
+        {
+            JoinGameNo = 0;
         }
 
         public Task SendAsyncTextMessage<T>(WebSocketMessageResponse<T> message)

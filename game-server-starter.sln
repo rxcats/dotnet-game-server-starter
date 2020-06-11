@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RxCats.WebSocketExtensions"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RxCats.RealTime", "RxCats.RealTime\RxCats.RealTime.csproj", "{10740B7A-CAAC-4545-B781-74217DED4257}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RxCats.CronJob", "RxCats.CronJob\RxCats.CronJob.csproj", "{89F618F8-6AFF-426A-8FD3-8B3227D7AC7A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,5 +74,17 @@ Global
 		{10740B7A-CAAC-4545-B781-74217DED4257}.Release|x64.Build.0 = Release|Any CPU
 		{10740B7A-CAAC-4545-B781-74217DED4257}.Release|x86.ActiveCfg = Release|Any CPU
 		{10740B7A-CAAC-4545-B781-74217DED4257}.Release|x86.Build.0 = Release|Any CPU
+		{89F618F8-6AFF-426A-8FD3-8B3227D7AC7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89F618F8-6AFF-426A-8FD3-8B3227D7AC7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89F618F8-6AFF-426A-8FD3-8B3227D7AC7A}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{89F618F8-6AFF-426A-8FD3-8B3227D7AC7A}.Debug|x64.Build.0 = Debug|Any CPU
+		{89F618F8-6AFF-426A-8FD3-8B3227D7AC7A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{89F618F8-6AFF-426A-8FD3-8B3227D7AC7A}.Debug|x86.Build.0 = Debug|Any CPU
+		{89F618F8-6AFF-426A-8FD3-8B3227D7AC7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89F618F8-6AFF-426A-8FD3-8B3227D7AC7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89F618F8-6AFF-426A-8FD3-8B3227D7AC7A}.Release|x64.ActiveCfg = Release|Any CPU
+		{89F618F8-6AFF-426A-8FD3-8B3227D7AC7A}.Release|x64.Build.0 = Release|Any CPU
+		{89F618F8-6AFF-426A-8FD3-8B3227D7AC7A}.Release|x86.ActiveCfg = Release|Any CPU
+		{89F618F8-6AFF-426A-8FD3-8B3227D7AC7A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

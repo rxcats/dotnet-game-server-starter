@@ -1,204 +1,303 @@
-<html>
+<html lang="en">
 
 <head>
+    <title>client</title>
+    
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
-        integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+          integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
-        integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
-        crossorigin="anonymous"></script>
+            integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+            crossorigin="anonymous"></script>
 </head>
 
 <body>
-    <div class="container">
-        <form>
-            <div class="form-group">
-                <label for="address">address</label>
-                <input type="text" class="form-control" id="address" aria-describedby="address"
-                    value="wss://localhost:5001/ws">
+<div class="container">
+    <form>
+        <div class="form-group">
+            <label for="address">Address</label>
+            <input type="text" class="form-control" id="address" aria-describedby="address"
+                   value="wss://localhost:5001/ws">
+        </div>
 
-                <button type="button" id="connect" class="btn btn-primary">접속</button>
+        <div class="form-group">
 
-                <button type="button" id="close" class="btn btn-danger">종료</button>
-            </div>
+            <label for="characterNo">CharacterNo</label>
+            <input type="text" class="form-control" id="characterNo" value="1">
 
-            <div class="form-group">
+            <label for="nickname">Nickname</label>
+            <input type="text" class="form-control" id="nickname" value="Character#1">
+            
+            <button type="button" id="evtConnect" class="btn btn-danger">Connect</button>
+            <button type="button" id="evtClose" class="btn btn-primary">Close</button>
+        </div>
 
-                <label for="characterNo">characterNo</label>
-                <input type="text" class="form-control" id="characterNo" value="1">
+        <div class="form-group">
+            <label for="gameNo">GameNo</label>
+            <input type="text" class="form-control" id="gameNo" value="1">
 
-                <label for="nickname">nickname</label>
-                <input type="text" class="form-control" id="nickname" value="Character#1">
+            <button type="button" id="evtSearchAndJoinGame" class="btn btn-secondary">SearchAndJoinGame</button>
+            <button type="button" id="evtCreateGame" class="btn btn-secondary">CreateGame</button>
+            <button type="button" id="evtJoinGame" class="btn btn-secondary">JoinGame</button>
+            <button type="button" id="evtLeaveGame" class="btn btn-secondary">LeaveGame</button>
+            <button type="button" id="evtGetGameSlotList" class="btn btn-secondary">GetGameSlotList</button>
+            <button type="button" id="evtGetGameSlot" class="btn btn-secondary">GetGameSlot</button>
+        </div>
 
-                <button type="button" id="evt_Connect" class="btn btn-secondary">Connect</button>
-            </div>
+        <div class="form-group">
+            <label for="chatMessage">ChatMessage</label>
+            <input type="text" class="form-control" id="chatMessage" value="Hello World">
 
-            <div class="form-group">
-                <label for="gameNo">gameNo</label>
-                <input type="text" class="form-control" id="gameNo" value="1">
+            <button type="button" id="evtGameChat" class="btn btn-secondary">GameChat</button>
+        </div>
 
-                <button type="button" id="evt_SearchAndJoinGame" class="btn btn-secondary">SearchAndJoinGame</button>
-                <button type="button" id="evt_CreateGame" class="btn btn-secondary">CreateGame</button>
-                <button type="button" id="evt_JoinGame" class="btn btn-secondary">JoinGame</button>
-                <button type="button" id="evt_LeaveGame" class="btn btn-secondary">LeaveGame</button>
-            </div>
-        </form>
-    </div>
+        <div class="form-group">
+            <label for="debugConsole">DebugConsole</label>
+            <textarea class="form-control" id="debugConsole" rows="5"></textarea>
+            <button type="button" id="cleanDebugConsole" class="btn btn-secondary">Clean</button>
+        </div>
+    </form>
+</div>
 
-    <script>
-        $(document).ready(() => {
+<script>
+    $(document).ready(() => {
 
-            class RequestMessage {
-                constructor(MessageType, Message) {
-                    this.MessageType = MessageType;
-                    this.Message = Message;
-                }
+        class RequestMessage {
+            constructor(MessageType, Message) {
+                this.MessageType = MessageType;
+                this.Message = Message;
             }
+        }
 
-            class CharacterInfo {
-                constructor(CharacterNo, Nickname) {
-                    this.CharacterNo = CharacterNo;
-                    this.Nickname = Nickname;
-                }
+        class CharacterInfo {
+            constructor(CharacterNo, Nickname) {
+                this.CharacterNo = CharacterNo;
+                this.Nickname = Nickname;
             }
+        }
 
-            class ConnectMessage {
-                constructor(GameName) {
-                    this.GameName = GameName;
-                }
+        class ConnectMessage {
+            constructor(GameName) {
+                this.GameName = GameName;
             }
+        }
 
-            class CreateGameMessage {
-                constructor(GameName) {
-                    this.GameName = GameName;
-                }
+        class CreateGameMessage {
+            constructor(GameName) {
+                this.GameName = GameName;
             }
+        }
 
-            class JoinGameMessage {
-                constructor(GameNo) {
-                    this.GameNo = GameNo;
-                }
+        class JoinGameMessage {
+            constructor(GameNo) {
+                this.GameNo = GameNo;
             }
+        }
 
-            class LeaveGameMessage {
-                constructor(GameNo) {
-                    this.GameNo = GameNo;
-                }
+        class LeaveGameMessage {
+            constructor(GameNo) {
+                this.GameNo = GameNo;
             }
-
-            class ResultEventCallbakService {
-                constructor() {
-
-                }
-
-                ConnectResult() {
-
-                }
-
-                CreateGameResult(param) {
-                    $('#gameNo').val(param.GameNo);
-                }
-
-                JoinGameResult(param) {
-                    $('#gameNo').val(param.GameNo);
-                }
-
-                LeaveGameResult(param) {
-
-                }
+        }
+        
+        class GameChatMessage {
+            constructor(GameNo, Message) {
+                this.GameNo = GameNo;
+                this.Message = Message;
             }
+        }
 
-            const setCharacter = () => {
-                const ts = new Date().getTime();
-                $('#characterNo').val(ts);
-                $('#nickname').val('#C' + ts);
-            };
+        class WebSocketClient {
+            constructor() {
+                this.client = null;
+            }
+            
+            Connect(uri) {
+                this.client = new WebSocket(uri);
 
-            setCharacter();
+                this.client.onmessage = evt => {
+                    debug(evt.data);
 
-            let conn = null;
-            let connected = false;
-
-            const eventCallbackService = new ResultEventCallbakService();
-
-            const addWebSocketListener = () => {
-                if (conn != null) {
-                    return;
-                }
-
-                conn = new WebSocket($('#address').val().trim());
-
-                conn.onmessage = evt => {
                     const result = JSON.parse(evt.data);
-                    console.log(result);
 
                     try {
-                        eventCallbackService[result.ResultType](result.Result);
+                        this[result.ResultType](result.Result);
                     } catch (e) {
                         console.error(e);
                     }
                 };
 
-                conn.onopen = evt => {
-                    console.log('open');
-                    connected = true;
+                this.client.onopen = evt => {
+                    debug('onopen');
+
+                    const timer = setInterval(() => {
+                        
+                        if (this.IsOpen()) {
+                            this.SendPing();
+                        } else {
+                            clearInterval(timer);
+                        }
+                        
+                    }, 60 * 1000);
                 };
 
-                conn.onclose = evt => {
-                    console.log('closed');
+                this.client.onclose = evt => {
+                    debug('onclose');
                 };
 
-                conn.onerror = evt => {
+                this.client.onerror = evt => {
+                    debug('onerror');
                     console.error('error');
                 };
-            };
+            }
+            
+            Close() {
+                this.client.close();
+                this.client = null;
+            }
+            
+            IsOpen() {
+                return this.client != null && this.client.readyState === 1
+            }
+            
+            SendPing() {
+                debug('send ping');
+                this.SendMessage(new RequestMessage('Ping', null));
+            }
+            
+            Ping() {
+                this.SendMessage(new RequestMessage('Pong', null));
+            }
+            
+            Pong() {
+                
+            }
+            
+            SendMessage(req) {
+                if (!this.IsOpen()) {
+                    debug('connection closed');
+                    return;
+                }
+                
+                this.client.send(JSON.stringify(req));
+            }
 
-            $('#connect').on('click', () => {
-                addWebSocketListener();
-            });
+            ConnectResult() {
 
-            $('#close').on('click', () => {
-                conn.close();
-                conn = null;
-                connected = false;
-            });
+            }
 
-            $('#evt_Connect').on('click', () => {
-                addWebSocketListener();
+            CreateGameResult(param) {
+                $('#gameNo').val(param.GameNo);
+            }
 
-                setTimeout(() => {
+            JoinGameResult(param) {
+                $('#gameNo').val(param.GameNo);
+            }
+
+            LeaveGameResult(param) {
+
+            }
+
+            GameChatResult(param) {
+                
+            }
+
+            GetGameSlotListResult(param) {
+                
+            }
+
+            GetGameSlotResult(param) {
+                
+            }
+        }
+
+        const setCharacter = () => {
+            const ts = new Date().getTime();
+            $('#characterNo').val(ts);
+            $('#nickname').val('#C' + ts);
+        };
+        
+        const debug = (message) => {
+            let error = $('#debugConsole').val();
+            const r = error ? error + "\n" + message : message;
+            $('#debugConsole').val(r);
+            $('#debugConsole').scrollTop($('#debugConsole')[0].scrollHeight);
+        }
+
+        setCharacter();
+
+        const client = new WebSocketClient();
+        
+        $('#cleanDebugConsole').on('click', () => {
+            $('#debugConsole').val('');
+        });
+
+        $('#evtClose').on('click', () => {
+            client.Close();
+        });
+
+        $('#evtConnect').on('click', () => {
+            client.Connect($('#address').val());
+            
+            // wait for connect
+            const timer = setInterval(() => {
+                if (client.IsOpen()) {
                     const characterNo = $('#characterNo').val();
                     const nickname = $('#nickname').val();
                     const req = new RequestMessage('Connect', new CharacterInfo(characterNo, nickname));
-                    conn.send(JSON.stringify(req));
-                }, 500);
-            });
-
-            $('#evt_CreateGame').on('click', () => {
-                const req = new RequestMessage('CreateGame', new CreateGameMessage('TestGame'));
-                conn.send(JSON.stringify(req));
-            });
-
-            $('#evt_JoinGame').on('click', () => {
-                const gameNo = $('#gameNo').val();
-                const req = new RequestMessage('JoinGame', new JoinGameMessage(gameNo));
-                conn.send(JSON.stringify(req));
-            });
-
-            $('#evt_LeaveGame').on('click', () => {
-                const gameNo = $('#gameNo').val();
-                const req = new RequestMessage('LeaveGame', new LeaveGameMessage(gameNo));
-                conn.send(JSON.stringify(req));
-            });
-
-            $('#evt_SearchAndJoinGame').on('click', () => {
-                const gameNo = $('#gameNo').val();
-                const req = new RequestMessage('SearchAndJoinGame', null);
-                conn.send(JSON.stringify(req));
-            });
+                    client.SendMessage(req);
+                    
+                    clearInterval(timer);
+                } else {
+                    console.log('wait for connect');
+                }
+            }, 50);
         });
-    </script>
+
+        $('#evtCreateGame').on('click', () => {
+            const req = new RequestMessage('CreateGame', new CreateGameMessage('TestGame'));
+            client.SendMessage(req);
+        });
+
+        $('#evtJoinGame').on('click', () => {
+            const gameNo = $('#gameNo').val();
+            const req = new RequestMessage('JoinGame', new JoinGameMessage(gameNo));
+            client.SendMessage(req);
+        });
+
+        $('#evtLeaveGame').on('click', () => {
+            const gameNo = $('#gameNo').val();
+            const req = new RequestMessage('LeaveGame', new LeaveGameMessage(gameNo));
+            client.SendMessage(req);
+        });
+
+        $('#evtSearchAndJoinGame').on('click', () => {
+            const req = new RequestMessage('SearchAndJoinGame', null);
+            client.SendMessage(req);
+        });
+
+        $('#evtGameChat').on('click', () => {
+            const gameNo = $('#gameNo').val();
+            const message = $('#chatMessage').val();
+            
+            const req = new RequestMessage('GameChat', new GameChatMessage(gameNo, message));
+            client.SendMessage(req);
+            
+            $('#chatMessage').val('');
+        });
+
+        $('#evtGetGameSlotList').on('click', () => {
+            const req = new RequestMessage('GetGameSlotList', null);
+            client.SendMessage(req);
+        });
+
+        $('#evtGetGameSlot').on('click', () => {
+            const req = new RequestMessage('GetGameSlot', null);
+            client.SendMessage(req);
+        });
+    });
+</script>
 </body>
 
 </html>

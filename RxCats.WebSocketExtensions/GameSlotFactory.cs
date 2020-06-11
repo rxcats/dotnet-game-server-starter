@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using static System.Threading.Interlocked;
 
 namespace RxCats.WebSocketExtensions
 {
     public class GameSlotFactory : IDisposable
     {
+        private const int MaxSlotSize = 1000;
+
         private static long _counter;
 
         private readonly ConcurrentDictionary<long, GameSlotInfo> slots;
@@ -20,6 +23,11 @@ namespace RxCats.WebSocketExtensions
         {
             Increment(ref _counter);
             return _counter;
+        }
+
+        public List<GameSlotInfo> All()
+        {
+            return slots.Select(slot => slot.Value).ToList();
         }
 
         public GameSlotInfo GetSlot(long gameNo)
@@ -54,6 +62,11 @@ namespace RxCats.WebSocketExtensions
 
         public GameSlotInfo AddSlot(CharacterInfo characterInfo, string gameName = "")
         {
+            if (slots.Count + 1 > MaxSlotSize)
+            {
+                throw new ServiceException("GameSlot Is Full");
+            }
+
             var gameNo = IncrementAndGet();
 
             var info = new GameSlotInfo
@@ -132,7 +145,7 @@ namespace RxCats.WebSocketExtensions
         public GameSlotInfo RemoveSlotMember(long gameNo, CharacterInfo characterInfo)
         {
             if (!slots.TryGetValue(gameNo, out GameSlotInfo info)) throw new ServiceException("Cannot Find GameNo");
-            
+
             // 참가자가 1명인 경우 방 제거
             if (info.Slot1CharacterInfo == null || info.Slot2CharacterInfo == null)
             {

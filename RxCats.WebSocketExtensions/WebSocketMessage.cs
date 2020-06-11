@@ -31,13 +31,17 @@ namespace RxCats.WebSocketExtensions
         EndGame,
         GiveUpGame,
         GameChat,
+        GetGameSlotList,
+        GetGameSlot,
         
         ConnectResult,
         DisconnectResult,
         CreateGameResult,
         LeaveGameResult,
         GameChatResult,
-        JoinGameResult
+        JoinGameResult,
+        GetGameSlotListResult,
+        GetGameSlotResult,
     }
 
     public class WebSocketMessageRequest<T>
