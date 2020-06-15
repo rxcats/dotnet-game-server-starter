@@ -8,23 +8,23 @@ namespace RxCats.WebSocketExtensions
     {
         private readonly ILogger<WebSocketEventHandler> logger;
 
-        private readonly WebSocketSessionFactory sessionFactory;
+        private readonly WebSocketSessionManager sessionManager;
 
-        private readonly GameSlotFactory gameSlotFactory;
+        private readonly GameSlotManager gameSlotManager;
 
-        public WebSocketEventHandler(ILogger<WebSocketEventHandler> logger, WebSocketSessionFactory sessionFactory,
-            GameSlotFactory gameSlotFactory)
+        public WebSocketEventHandler(ILogger<WebSocketEventHandler> logger, WebSocketSessionManager sessionManager,
+            GameSlotManager gameSlotManager)
         {
             this.logger = logger;
-            this.sessionFactory = sessionFactory;
-            this.gameSlotFactory = gameSlotFactory;
+            this.sessionManager = sessionManager;
+            this.gameSlotManager = gameSlotManager;
         }
 
         private async void SendMessageByCharacterNos<T>(List<long> characterNos, WebSocketMessageResponse<T> res)
         {
             foreach (var characterNo in characterNos)
             {
-                var session = sessionFactory.GetByCharacterNo(characterNo);
+                var session = sessionManager.GetByCharacterNo(characterNo);
                 if (session != null)
                 {
                     await session.SendAsyncTextMessage(res);
@@ -34,11 +34,11 @@ namespace RxCats.WebSocketExtensions
 
         private async void BroadCastMessage<T>(long gameNo, WebSocketMessageResponse<T> res)
         {
-            var characterNos = gameSlotFactory.GetSlotCharacterNos(gameNo);
+            var characterNos = gameSlotManager.GetSlotCharacterNos(gameNo);
 
             foreach (var characterNo in characterNos)
             {
-                var session = sessionFactory.GetByCharacterNo(characterNo);
+                var session = sessionManager.GetByCharacterNo(characterNo);
                 if (session != null)
                 {
                     await session.SendAsyncTextMessage(res);
@@ -63,7 +63,7 @@ namespace RxCats.WebSocketExtensions
 
         public void OnOpen(WebSocketSession session)
         {
-            sessionFactory.Add(session);
+            sessionManager.Add(session);
         }
 
         public void OnClose(WebSocketSession session)
@@ -73,7 +73,7 @@ namespace RxCats.WebSocketExtensions
                 KickCharacterFromGame(session);
             }
 
-            sessionFactory.Remove(session);
+            sessionManager.Remove(session);
         }
 
         public void Pong(WebSocketSession session)
@@ -94,7 +94,7 @@ namespace RxCats.WebSocketExtensions
         {
             session.CharacterNo = req.CharacterNo;
             session.Nickname = req.Nickname;
-            sessionFactory.Add(session);
+            sessionManager.Add(session);
 
             var res = new WebSocketMessageResponse<string>
             {
@@ -106,7 +106,7 @@ namespace RxCats.WebSocketExtensions
 
         public void Disconnect(WebSocketSession session)
         {
-            sessionFactory.Remove(session);
+            sessionManager.Remove(session);
 
             var res = new WebSocketMessageResponse<string>
             {
@@ -125,7 +125,7 @@ namespace RxCats.WebSocketExtensions
 
             CharacterInfo characterInfo = GetCharacterInfoFromSession(session);
 
-            GameSlotInfo result = gameSlotFactory.AddSlot(characterInfo, req.GameName);
+            GameSlotInfo result = gameSlotManager.AddSlot(characterInfo, req.GameName);
 
             session.JoinGameNo = result.GameNo;
 
@@ -147,7 +147,7 @@ namespace RxCats.WebSocketExtensions
 
             CharacterInfo characterInfo = GetCharacterInfoFromSession(session);
 
-            GameSlotInfo result = gameSlotFactory.AddSlotMember(req.GameNo, characterInfo);
+            GameSlotInfo result = gameSlotManager.AddSlotMember(req.GameNo, characterInfo);
 
             session.JoinGameNo = result.GameNo;
 
@@ -169,7 +169,7 @@ namespace RxCats.WebSocketExtensions
 
             CharacterInfo characterInfo = GetCharacterInfoFromSession(session);
 
-            GameSlotInfo result = gameSlotFactory.SearchSlot(characterInfo);
+            GameSlotInfo result = gameSlotManager.SearchSlot(characterInfo);
 
             session.JoinGameNo = result.GameNo;
 
@@ -184,15 +184,15 @@ namespace RxCats.WebSocketExtensions
         {
             CharacterInfo characterInfo = GetCharacterInfoFromSession(session);
 
-            List<long> joinCharacterNos = gameSlotFactory.GetSlotCharacterNos(session.JoinGameNo);
+            List<long> joinCharacterNos = gameSlotManager.GetSlotCharacterNos(session.JoinGameNo);
 
-            GameSlotInfo result = gameSlotFactory.RemoveSlotMember(session.JoinGameNo, characterInfo);
+            GameSlotInfo result = gameSlotManager.RemoveSlotMember(session.JoinGameNo, characterInfo);
 
             if (result == null)
             {
                 foreach (var no in joinCharacterNos)
                 {
-                    var s = sessionFactory.GetByCharacterNo(no);
+                    var s = sessionManager.GetByCharacterNo(no);
                     s.LeaveGame();
                 }
             }
@@ -200,7 +200,7 @@ namespace RxCats.WebSocketExtensions
             {
                 session.LeaveGame();
 
-                var masterSession = sessionFactory.GetByCharacterNo(result.MasterCharacterNo);
+                var masterSession = sessionManager.GetByCharacterNo(result.MasterCharacterNo);
 
                 var res = new WebSocketMessageResponse<GameSlotInfo>
                 {
@@ -232,7 +232,7 @@ namespace RxCats.WebSocketExtensions
             SendMessage(session, new WebSocketMessageResponse<List<GameSlotInfo>>
             {
                 ResultType = WebSocketMessageType.GetGameSlotListResult,
-                Result = gameSlotFactory.All()
+                Result = gameSlotManager.All()
             });
         }
 
@@ -241,7 +241,7 @@ namespace RxCats.WebSocketExtensions
             SendMessage(session, new WebSocketMessageResponse<GameSlotInfo>
             {
                 ResultType = WebSocketMessageType.GetGameSlotResult,
-                Result = gameSlotFactory.GetSlot(session.JoinGameNo)
+                Result = gameSlotManager.GetSlot(session.JoinGameNo)
             });
         }
 

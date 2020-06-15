@@ -6,7 +6,7 @@ using static System.Threading.Interlocked;
 
 namespace RxCats.WebSocketExtensions
 {
-    public class GameSlotFactory : IDisposable
+    public class GameSlotManager : IDisposable
     {
         private const int MaxSlotSize = 1000;
 
@@ -14,7 +14,7 @@ namespace RxCats.WebSocketExtensions
 
         private readonly ConcurrentDictionary<long, GameSlotInfo> slots;
 
-        public GameSlotFactory()
+        public GameSlotManager()
         {
             slots = new ConcurrentDictionary<long, GameSlotInfo>();
         }

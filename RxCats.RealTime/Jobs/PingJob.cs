@@ -12,13 +12,13 @@ namespace RxCats.RealTime.Jobs
     {
         private readonly ILogger<PingJob> logger;
 
-        private readonly WebSocketSessionFactory webSocketSessionFactory;
+        private readonly WebSocketSessionManager webSocketSessionManager;
 
-        public PingJob(IScheduleConfig config, ILogger<PingJob> logger, WebSocketSessionFactory webSocketSessionFactory)
+        public PingJob(IScheduleConfig config, ILogger<PingJob> logger, WebSocketSessionManager webSocketSessionManager)
             : base(config.CronExpression, config.TimeZoneInfo)
         {
             this.logger = logger;
-            this.webSocketSessionFactory = webSocketSessionFactory;
+            this.webSocketSessionManager = webSocketSessionManager;
         }
 
         public override Task StartAsync(CancellationToken cancellationToken)
@@ -32,7 +32,7 @@ namespace RxCats.RealTime.Jobs
             logger.LogInformation($"{DateTime.Now:hh:mm:ss} PingJob 1 is working.");
 
             var closedSessions = new List<long>();
-            var sessions = webSocketSessionFactory.All();
+            var sessions = webSocketSessionManager.All();
             foreach (var session in sessions)
             {
                 if (!session.Value.IsOpen())
@@ -45,7 +45,7 @@ namespace RxCats.RealTime.Jobs
 
             foreach (var session in closedSessions)
             {
-                webSocketSessionFactory.RemoveByKey(session);
+                webSocketSessionManager.RemoveByKey(session);
             }
 
             return Task.CompletedTask;

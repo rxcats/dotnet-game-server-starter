@@ -27,8 +27,8 @@ namespace RxCats.RealTime
 
             services.AddSingleton<TextWebSocketHandler>();
             services.AddSingleton<WebSocketEventHandler>();
-            services.AddSingleton<WebSocketSessionFactory>();
-            services.AddSingleton<GameSlotFactory>();
+            services.AddSingleton<WebSocketSessionManager>();
+            services.AddSingleton<GameSlotManager>();
 
             // cron jobs
             services.AddCronJob<PingJob>(config =>

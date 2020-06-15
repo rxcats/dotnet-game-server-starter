@@ -3,11 +3,11 @@ using System.Collections.Concurrent;
 
 namespace RxCats.WebSocketExtensions
 {
-    public class WebSocketSessionFactory : IDisposable
+    public class WebSocketSessionManager : IDisposable
     {
         private readonly ConcurrentDictionary<long, WebSocketSession> sessions;
 
-        public WebSocketSessionFactory()
+        public WebSocketSessionManager()
         {
             sessions = new ConcurrentDictionary<long, WebSocketSession>();
         }
