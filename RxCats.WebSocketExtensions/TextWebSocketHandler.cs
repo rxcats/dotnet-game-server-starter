@@ -33,7 +33,7 @@ namespace RxCats.WebSocketExtensions
 
             if (messageType == null)
             {
-                throw new ServiceException();
+                throw new ServiceException("Invalid MessageType");
             }
 
             var type = eventHandler.GetType();
@@ -42,7 +42,7 @@ namespace RxCats.WebSocketExtensions
 
             if (method == null)
             {
-                throw new ServiceException();
+                throw new ServiceException($"Cannot Find {messageType} Callback Method");
             }
 
             return method;
@@ -56,16 +56,19 @@ namespace RxCats.WebSocketExtensions
         public Task HandleTextMessage(WebSocketSession session, byte[] buffer)
         {
             var payload = "";
+
             try
             {
                 payload = Encoding.UTF8.GetString(buffer);
-
+            
+                logger.LogInformation("Payload: {}", payload);
+                
                 var jsonObj = JObject.Parse(payload);
-
+                
                 var method = GetMethod(jsonObj);
-
+                
                 var parameters = method.GetParameters();
-
+                
                 switch (parameters.Length)
                 {
                     case 0:
@@ -77,33 +80,33 @@ namespace RxCats.WebSocketExtensions
                     default:
                     {
                         var arg = GetArgument(jsonObj, parameters[1].ParameterType);
-
-                        logger.LogInformation("arg {}", arg);
-
-                        try
-                        {
-                            method.Invoke(eventHandler, new[] { session, arg });
-                        }
-                        catch (Exception e)
-                        {
-                            logger.LogError("Invalid Operation, SessionId: {}, Payload: {}, arg: {}",
-                                session.SessionId, payload, arg);
-                            logger.LogError(e.StackTrace);
-                            throw;
-                        }
-
+                        method.Invoke(eventHandler, new[] { session, arg });
                         break;
                     }
                 }
             }
+            catch (ServiceException e)
+            {
+                logger.LogError("Execution failure, Payload: {}, ResultCode: {}", payload, e.ResultCode);
+                throw;
+            }
             catch (Exception e)
             {
-                logger.LogError("Invalid Packet, SessionId: {}, Payload: {}", session.SessionId, payload);
-                logger.LogError(e.StackTrace);
-                throw;
+                logger.LogError("Execution failure, Payload: {}", payload);
+                throw new ServiceException(e.Message);
             }
 
             return Task.CompletedTask;
+        }
+
+        public Task HandleTransportError(WebSocketSession session, Exception e)
+        {
+            logger.LogError(e.StackTrace);
+            return e switch
+            {
+                ServiceException ex => session.SendAsyncErrorMessage(ex.Message, ex.ResultCode),
+                _ => session.SendAsyncErrorMessage(e.Message)
+            };
         }
 
         public Task AfterConnectionClosed(WebSocketSession session, WebSocketCloseStatus closedStatus)

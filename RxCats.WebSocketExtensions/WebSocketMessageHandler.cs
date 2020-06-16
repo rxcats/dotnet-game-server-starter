@@ -70,15 +70,9 @@ namespace RxCats.WebSocketExtensions
                 {
                     await textWebSocketHandler.HandleTextMessage(webSocketSession, buffer);
                 }
-                catch (ServiceException e)
-                {
-                    await webSocketSession.SendAsyncErrorMessage(e.Message, e.ResultCode);
-                    logger.LogError(e.StackTrace);
-                }
                 catch (Exception e)
                 {
-                    await webSocketSession.SendAsyncErrorMessage(e.Message);
-                    logger.LogError(e.StackTrace);
+                    await textWebSocketHandler.HandleTransportError(webSocketSession, e);
                 }
                 finally
                 {
